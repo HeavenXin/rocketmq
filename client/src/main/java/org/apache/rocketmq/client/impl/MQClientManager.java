@@ -45,12 +45,16 @@ public class MQClientManager {
     }
 
     public MQClientInstance getOrCreateMQClientInstance(final ClientConfig clientConfig, RPCHook rpcHook) {
+        //创建buildkey,根据IP和对应的配置名称
         String clientId = clientConfig.buildMQClientId();
+        //如果不设置名称,则会将名称设置位进程ID,避免相同的clientId
         MQClientInstance instance = this.factoryTable.get(clientId);
+        //此instance,是RocketMQ网络交互,消息生产者,消费者,Broker,NameServer打交道的通道
         if (null == instance) {
             instance =
                 new MQClientInstance(clientConfig.cloneClientConfig(),
                     this.factoryIndexGenerator.getAndIncrement(), clientId, rpcHook);
+            //放入到这个实例中的一个ConcurrentMap中去,这个Manager实例,是一个static固定的实例/JVM中只有一个
             MQClientInstance prev = this.factoryTable.putIfAbsent(clientId, instance);
             if (prev != null) {
                 instance = prev;

@@ -29,6 +29,7 @@ public class LatencyFaultToleranceImpl implements LatencyFaultTolerance<String> 
 
     private final ThreadLocalIndex whichItemWorst = new ThreadLocalIndex();
 
+    //更新brokerName对应的状态
     @Override
     public void updateFaultItem(final String name, final long currentLatency, final long notAvailableDuration) {
         FaultItem old = this.faultItemTable.get(name);
@@ -47,7 +48,7 @@ public class LatencyFaultToleranceImpl implements LatencyFaultTolerance<String> 
             old.setStartTimestamp(System.currentTimeMillis() + notAvailableDuration);
         }
     }
-
+    //时间戳
     @Override
     public boolean isAvailable(final String name) {
         final FaultItem faultItem = this.faultItemTable.get(name);
