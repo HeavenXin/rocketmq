@@ -174,13 +174,15 @@ public class MQClientInstance {
 
             info.setOrderTopic(true);
         } else {
+            //获取所有的队列
             List<QueueData> qds = route.getQueueDatas();
             Collections.sort(qds);
             for (QueueData qd : qds) {
-                //是否可以写入
+                //是否可以写入,不可直接跳过
                 if (PermName.isWriteable(qd.getPerm())) {
                     BrokerData brokerData = null;
                     for (BrokerData bd : route.getBrokerDatas()) {
+                        //查找到了
                         if (bd.getBrokerName().equals(qd.getBrokerName())) {
                             brokerData = bd;
                             break;
@@ -190,12 +192,13 @@ public class MQClientInstance {
                     if (null == brokerData) {
                         continue;
                     }
-
+                    //确定是Master_id
                     if (!brokerData.getBrokerAddrs().containsKey(MixAll.MASTER_ID)) {
                         continue;
                     }
 
                     for (int i = 0; i < qd.getWriteQueueNums(); i++) {
+                        //根据topic和序号创建MessageQueue,填充topicPublishInfo的List<MessageQueue>
                         MessageQueue mq = new MessageQueue(topic, qd.getBrokerName(), i);
                         info.getMessageQueueList().add(mq);
                     }
