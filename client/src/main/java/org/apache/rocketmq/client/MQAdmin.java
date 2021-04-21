@@ -29,20 +29,19 @@ public interface MQAdmin {
     /**
      * Creates an topic
      *
-     * @param key accesskey
+     * @param key accesskey 暂无作用
      * @param newTopic topic name
-     * @param queueNum topic's queue number
+     * @param queueNum topic's queue number 队列名称
      */
     void createTopic(final String key, final String newTopic, final int queueNum)
         throws MQClientException;
 
     /**
      * Creates an topic
-     *
-     * @param key accesskey
+     * @param key accesskey 暂无作用
      * @param newTopic topic name
-     * @param queueNum topic's queue number
-     * @param topicSysFlag topic system flag
+     * @param queueNum topic's queue number 队列名称
+     * @param topicSysFlag topic system flag 主题系统标签
      */
     void createTopic(String key, String newTopic, int queueNum, int topicSysFlag)
         throws MQClientException;

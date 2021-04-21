@@ -39,17 +39,21 @@ public class Message implements Serializable {
     }
 
     public Message(String topic, String tags, String keys, int flag, byte[] body, boolean waitStoreMsgOK) {
+        //主题
         this.topic = topic;
+        //Flag
         this.flag = flag;
+        //主题
         this.body = body;
-
+        //设置属性,带有Tags
         if (tags != null && tags.length() > 0)
             this.setTags(tags);
-
+        //设置属性,带有keys
         if (keys != null && keys.length() > 0)
             this.setKeys(keys);
-
+        //是否等待消息存储完成
         this.setWaitStoreMsgOK(waitStoreMsgOK);
+        //此上三者,都存储在Message的properties中,一个HashMap中
     }
 
     public Message(String topic, String tags, byte[] body) {
