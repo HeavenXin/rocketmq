@@ -67,6 +67,7 @@ public class TopicPublishInfo {
     }
 
     public MessageQueue selectOneMessageQueue(final String lastBrokerName) {
+        //如果没有失败过,就直接走正常流程
         if (lastBrokerName == null) {
             return selectOneMessageQueue();
         } else {
@@ -85,10 +86,13 @@ public class TopicPublishInfo {
     }
 
     public MessageQueue selectOneMessageQueue() {
+        //因为是轮询,所以会获得下一个
         int index = this.sendWhichQueue.getAndIncrement();
+        //别ArrayIndexException了
         int pos = Math.abs(index) % this.messageQueueList.size();
         if (pos < 0)
             pos = 0;
+        //直接获取返回
         return this.messageQueueList.get(pos);
     }
 

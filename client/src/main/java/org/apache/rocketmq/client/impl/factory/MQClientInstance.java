@@ -210,7 +210,7 @@ public class MQClientInstance {
 
         return info;
     }
-
+    //尝试转换
     public static Set<MessageQueue> topicRouteData2TopicSubscribeInfo(final String topic, final TopicRouteData route) {
         Set<MessageQueue> mqList = new HashSet<MessageQueue>();
         List<QueueData> qds = route.getQueueDatas();

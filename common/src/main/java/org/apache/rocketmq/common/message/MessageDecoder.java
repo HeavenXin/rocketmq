@@ -515,13 +515,16 @@ public class MessageDecoder {
 
     public static byte[] encodeMessages(List<Message> messages) {
         //TO DO refactor, accumulate in one buffer, avoid copies
+        //一个byte的列表
         List<byte[]> encodedMessages = new ArrayList<byte[]>(messages.size());
         int allSize = 0;
         for (Message message : messages) {
             byte[] tmp = encodeMessage(message);
             encodedMessages.add(tmp);
+            //维护总量
             allSize += tmp.length;
         }
+        //总的一个byte
         byte[] allBytes = new byte[allSize];
         int pos = 0;
         for (byte[] bytes : encodedMessages) {

@@ -36,6 +36,7 @@ public class LatencyFaultToleranceImpl implements LatencyFaultTolerance<String> 
         if (null == old) {
             final FaultItem faultItem = new FaultItem(name);
             faultItem.setCurrentLatency(currentLatency);
+            //设置不可用的时间
             faultItem.setStartTimestamp(System.currentTimeMillis() + notAvailableDuration);
 
             old = this.faultItemTable.putIfAbsent(name, faultItem);
@@ -53,6 +54,7 @@ public class LatencyFaultToleranceImpl implements LatencyFaultTolerance<String> 
     public boolean isAvailable(final String name) {
         final FaultItem faultItem = this.faultItemTable.get(name);
         if (faultItem != null) {
+            //就是检测是否已经大于了隔离时间了
             return faultItem.isAvailable();
         }
         return true;
