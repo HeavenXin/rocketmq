@@ -410,6 +410,7 @@ public class CommitLog {
             + 1 + topicLength //TOPIC
             + 2 + (propertiesLength > 0 ? propertiesLength : 0) //propertiesLength
             + 0;
+        //整体消息长度不定的,是由最上面的TotalSize进行确定的
         return msgLen;
     }
 
@@ -1530,6 +1531,7 @@ public class CommitLog {
             // STORETIMESTAMP + STOREHOSTADDRESS + OFFSET <br>
 
             // PHY OFFSET
+            //预热操作
             long wroteOffset = fileFromOffset + byteBuffer.position();
 
             int sysflag = msgInner.getSysFlag();
@@ -1540,8 +1542,10 @@ public class CommitLog {
             ByteBuffer storeHostHolder = ByteBuffer.allocate(storeHostLength);
 
             this.resetByteBuffer(storeHostHolder, storeHostLength);
+            //到此,开始创建对应的全局的唯一消息ID
             String msgId;
             if ((sysflag & MessageSysFlag.STOREHOSTADDRESS_V6_FLAG) == 0) {
+                //由IP 端口号 消息偏移量构成的全局唯一消息Id
                 msgId = MessageDecoder.createMessageId(this.msgIdMemory, msgInner.getStoreHostBytes(storeHostHolder), wroteOffset);
             } else {
                 msgId = MessageDecoder.createMessageId(this.msgIdV6Memory, msgInner.getStoreHostBytes(storeHostHolder), wroteOffset);
@@ -1553,6 +1557,7 @@ public class CommitLog {
             keyBuilder.append('-');
             keyBuilder.append(msgInner.getQueueId());
             String key = keyBuilder.toString();
+            //获取对应的偏移量
             Long queueOffset = CommitLog.this.topicQueueTable.get(key);
             if (null == queueOffset) {
                 queueOffset = 0L;
@@ -1576,7 +1581,9 @@ public class CommitLog {
 
             /**
              * Serialize message
+             * 序列化消息
              */
+            //获取属性
             final byte[] propertiesData =
                 msgInner.getPropertiesString() == null ? null : msgInner.getPropertiesString().getBytes(MessageDecoder.CHARSET_UTF8);
 
@@ -1591,7 +1598,7 @@ public class CommitLog {
             final int topicLength = topicData.length;
 
             final int bodyLength = msgInner.getBody() == null ? 0 : msgInner.getBody().length;
-
+            //那上面的消息体长度 topic长度, 属性长度 存储方式 计算对应的总长度
             final int msgLen = calMsgLength(msgInner.getSysFlag(), bodyLength, topicLength, propertiesLength);
 
             // Exceeds the maximum message
