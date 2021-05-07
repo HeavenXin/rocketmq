@@ -34,16 +34,17 @@ public class MappedFileQueue {
     private static final InternalLogger LOG_ERROR = InternalLoggerFactory.getLogger(LoggerName.STORE_ERROR_LOGGER_NAME);
 
     private static final int DELETE_FILES_BATCH_MAX = 10;
-
+    //存储目录
     private final String storePath;
-
+    //这是固定的,避免爆栈
     private final int mappedFileSize;
-
+    //文件集合
     private final CopyOnWriteArrayList<MappedFile> mappedFiles = new CopyOnWriteArrayList<MappedFile>();
-
+    //创建文件的服务类
     private final AllocateMappedFileService allocateMappedFileService;
-
+    //当前已经刷盘到哪里了,是不是应该存在MappedFile中更好呢?
     private long flushedWhere = 0;
+    //当前的写指针
     private long committedWhere = 0;
 
     private volatile long storeTimestamp = 0;
@@ -73,7 +74,7 @@ public class MappedFileQueue {
             }
         }
     }
-
+    //根据时间戳来获取
     public MappedFile getMappedFileByTime(final long timestamp) {
         Object[] mfs = this.copyMappedFiles(0);
 
@@ -86,7 +87,7 @@ public class MappedFileQueue {
                 return mappedFile;
             }
         }
-
+        //返回队列中最后一个
         return (MappedFile) mfs[mfs.length - 1];
     }
 
@@ -458,12 +459,14 @@ public class MappedFileQueue {
      * @param offset Offset.
      * @param returnFirstOnNotFound If the mapped file is not found, then return the first one.
      * @return Mapped file or null (when not found and returnFirstOnNotFound is <code>false</code>).
+     * 根据消息偏移量来查找MappedFile
      */
     public MappedFile findMappedFileByOffset(final long offset, final boolean returnFirstOnNotFound) {
         try {
             MappedFile firstMappedFile = this.getFirstMappedFile();
             MappedFile lastMappedFile = this.getLastMappedFile();
             if (firstMappedFile != null && lastMappedFile != null) {
+                //超出范围
                 if (offset < firstMappedFile.getFileFromOffset() || offset >= lastMappedFile.getFileFromOffset() + this.mappedFileSize) {
                     LOG_ERROR.warn("Offset not matched. Request offset: {}, firstOffset: {}, lastOffset: {}, mappedFileSize: {}, mappedFiles count: {}",
                         offset,
@@ -472,13 +475,16 @@ public class MappedFileQueue {
                         this.mappedFileSize,
                         this.mappedFiles.size());
                 } else {
+                    //在范围内,可以获取
+                    //计算实际的index,因为FirstMappedFile的偏移量可能不为0,故要计算在第几个MappedFile
                     int index = (int) ((offset / this.mappedFileSize) - (firstMappedFile.getFileFromOffset() / this.mappedFileSize));
                     MappedFile targetFile = null;
                     try {
+                        //获取到文件
                         targetFile = this.mappedFiles.get(index);
                     } catch (Exception ignored) {
                     }
-
+                    //返回文件
                     if (targetFile != null && offset >= targetFile.getFileFromOffset()
                         && offset < targetFile.getFileFromOffset() + this.mappedFileSize) {
                         return targetFile;

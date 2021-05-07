@@ -20,20 +20,20 @@ package org.apache.rocketmq.store;
  * When write a message to the commit log, returns results
  */
 public class AppendMessageResult {
-    // Return code
+    // 结果,正常是PUT_OK,其他的在AppendMessageStatus中
     private AppendMessageStatus status;
-    // Where to start writing
+    // 物理偏移量
     private long wroteOffset;
-    // Write Bytes
+    // 写入总量
     private int wroteBytes;
-    // Message ID
+    // 消息Id
     private String msgId;
-    // Message storage timestamp
+    // 存储的时间戳
     private long storeTimestamp;
-    // Consume queue's offset(step by one)
+    // 逻辑偏移量
     private long logicsOffset;
     private long pagecacheRT = 0;
-
+    //默认发送条数,批量消息的时候设置消息条数
     private int msgNum = 1;
 
     public AppendMessageResult(AppendMessageStatus status) {
