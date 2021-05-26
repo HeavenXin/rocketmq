@@ -1170,10 +1170,13 @@ public class CommitLog {
     }
 
     public SelectMappedBufferResult getMessage(final long offset, final int size) {
+        //获取到对应的物理文件
         int mappedFileSize = this.defaultMessageStore.getMessageStoreConfig().getMappedFileSizeCommitLog();
         MappedFile mappedFile = this.mappedFileQueue.findMappedFileByOffset(offset, offset == 0);
         if (mappedFile != null) {
+            //offset和文件大小取余获取到文件内的偏移量
             int pos = (int) (offset % mappedFileSize);
+            //根据偏移量和长度来读取消息
             return mappedFile.selectMappedBuffer(pos, size);
         }
         return null;
@@ -1608,8 +1611,7 @@ public class CommitLog {
             if (msgLen > this.maxMessageSize) {
                 CommitLog.log.warn("message size exceeded, msg total size: " + msgLen + ", msg body size: " + bodyLength
                     + ", maxMessageSize: " + this.maxMessageSize);
-                return new AppendMessageResult(AppendMessageStatus.MESSAGE_SIZE_EXCEEDED);
-            }
+                return new AppendMessageResult(AppendMessageStatus.MESSAGE_SIZE_EXCEEDED); }
 
             // Determines whether there is sufficient free space
             if ((msgLen + END_FILE_MIN_BLANK_LENGTH) > maxBlank) {

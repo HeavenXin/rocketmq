@@ -490,7 +490,7 @@ public class DefaultMessageStore implements MessageStore {
 
         long beginTime = this.getSystemClock().now();
         PutMessageResult result = this.commitLog.putMessage(msg);
-        //抛开刷库的延迟,我们走上面你的commitLog的放入消息
+        //抛开刷库的延迟,我们走上面的commitLog的放入消息
         long elapsedTime = this.getSystemClock().now() - beginTime;
         if (elapsedTime > 500) {
             log.warn("not in lock elapsed time(ms)={}, bodyLength={}", elapsedTime, msg.getBody().length);

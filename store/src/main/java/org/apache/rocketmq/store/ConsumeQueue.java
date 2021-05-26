@@ -153,52 +153,69 @@ public class ConsumeQueue {
     }
 
     public long getOffsetInQueueByTime(final long timestamp) {
+        //首先是根据时间戳定位到具体实现,就是找到第一个更新时间比传入的时间戳更大的文件
         MappedFile mappedFile = this.mappedFileQueue.getMappedFileByTime(timestamp);
+        //如果不为空
         if (mappedFile != null) {
+            //利用二分法加速查询
             long offset = 0;
+            //计算最低查找偏移量,是否消息队列中最小偏移量大于该文件的起始偏移量,返回之差还是0
             int low = minLogicOffset > mappedFile.getFileFromOffset() ? (int) (minLogicOffset - mappedFile.getFileFromOffset()) : 0;
             int high = 0;
             int midOffset = -1, targetOffset = -1, leftOffset = -1, rightOffset = -1;
             long leftIndexValue = -1L, rightIndexValue = -1L;
             long minPhysicOffset = this.defaultMessageStore.getMinPhyOffset();
+            //获取一个完整的ByteBuffer
             SelectMappedBufferResult sbr = mappedFile.selectMappedBuffer(0);
             if (null != sbr) {
                 ByteBuffer byteBuffer = sbr.getByteBuffer();
+                //高位先设置为整体ByteBuffer减去20的位置
                 high = byteBuffer.limit() - CQ_STORE_UNIT_SIZE;
                 try {
                     while (high >= low) {
+                        //获取中位
                         midOffset = (low + high) / (2 * CQ_STORE_UNIT_SIZE) * CQ_STORE_UNIT_SIZE;
                         byteBuffer.position(midOffset);
+                        //尝试获取物理偏移量
                         long phyOffset = byteBuffer.getLong();
                         int size = byteBuffer.getInt();
                         if (phyOffset < minPhysicOffset) {
+                            //物理偏移量小于最小物理偏移量,说明待查找的物理偏移量大于midOffSet,需要继续向右折半查找
                             low = midOffset + CQ_STORE_UNIT_SIZE;
                             leftOffset = midOffset;
                             continue;
                         }
-
+                        //走到这一步,说明偏移量已经在范围内了,进行判断,获取存储时间戳
                         long storeTime =
                             this.defaultMessageStore.getCommitLog().pickupStoreTimestamp(phyOffset, size);
                         if (storeTime < 0) {
+                            //无效消息
                             return 0;
                         } else if (storeTime == timestamp) {
+                            //bingo 命中
                             targetOffset = midOffset;
                             break;
                         } else if (storeTime > timestamp) {
+                            //时间戳大于查找的时间戳
+                            //设置high为midoffset
                             high = midOffset - CQ_STORE_UNIT_SIZE;
                             rightOffset = midOffset;
                             rightIndexValue = storeTime;
                         } else {
+                            //时间戳小于查找的时间戳
+                            //设置low为midoffset
                             low = midOffset + CQ_STORE_UNIT_SIZE;
                             leftOffset = midOffset;
                             leftIndexValue = storeTime;
                         }
                     }
-
+                    //跳出循环之后
                     if (targetOffset != -1) {
-
+                        //如果targetOffset不是 -1的话
                         offset = targetOffset;
                     } else {
+                        //接下来是根据leftIndexValue or rightIndexValue不为空来判断返回的是
+                        //左边最靠近的还是右边最靠近的
                         if (leftIndexValue == -1) {
 
                             offset = rightOffset;
@@ -524,8 +541,11 @@ public class ConsumeQueue {
     }
 
     public long rollNextFile(final long index) {
+        //获取这个文件长度
         int mappedFileSize = this.mappedFileSize;
+        //一个文件的最大偏移量
         int totalUnitsInFile = mappedFileSize / CQ_STORE_UNIT_SIZE;
+        //下一个文件的起始偏移量
         return index + totalUnitsInFile - index % totalUnitsInFile;
     }
 
