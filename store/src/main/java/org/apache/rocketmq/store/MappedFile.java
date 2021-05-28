@@ -152,16 +152,19 @@ public class MappedFile extends ReferenceResource {
     }
 
     private void init(final String fileName, final int fileSize) throws IOException {
+        //设置文件名称,即为初始的偏移量
         this.fileName = fileName;
+        //大小
         this.fileSize = fileSize;
         this.file = new File(fileName);
         this.fileFromOffset = Long.parseLong(this.file.getName());
         boolean ok = false;
-
+        //上述创建文件
         ensureDirOK(this.file.getParent());
 
         try {
             this.fileChannel = new RandomAccessFile(this.file, "rw").getChannel();
+            //根据RandomAccessFile获取到文件通道
             this.mappedByteBuffer = this.fileChannel.map(MapMode.READ_WRITE, 0, fileSize);
             TOTAL_MAPPED_VIRTUAL_MEMORY.addAndGet(fileSize);
             TOTAL_MAPPED_FILES.incrementAndGet();
@@ -275,6 +278,7 @@ public class MappedFile extends ReferenceResource {
      * @return The current flushed position
      */
     public int flush(final int flushLeastPages) {
+        //首先检测是否可以刷盘,和上面的commit类似,不介绍了
         if (this.isAbleToFlush(flushLeastPages)) {
             if (this.hold()) {
                 int value = getReadPosition();
@@ -300,11 +304,12 @@ public class MappedFile extends ReferenceResource {
         return this.getFlushedPosition();
     }
 
-    public int commit(final int commitLeastPages) {
+    public int commit(/*本次提交的最小页数*/final int commitLeastPages) {
         if (writeBuffer == null) {
             //no need to commit data to file channel, so just regard wrotePosition as committedPosition.
             return this.wrotePosition.get();
         }
+        //chech is allow to commit
         if (this.isAbleToCommit(commitLeastPages)) {
             if (this.hold()) {
                 commit0(commitLeastPages);
@@ -324,16 +329,23 @@ public class MappedFile extends ReferenceResource {
     }
 
     protected void commit0(final int commitLeastPages) {
+        //获取到写指针
         int writePos = this.wrotePosition.get();
+        //上次提交指针
         int lastCommittedPosition = this.committedPosition.get();
 
         if (writePos - lastCommittedPosition > commitLeastPages) {
             try {
+                //创建新的共享缓存区
                 ByteBuffer byteBuffer = writeBuffer.slice();
+                //讲共享缓存区回退到上次提交位置
                 byteBuffer.position(lastCommittedPosition);
+                //讲limit设置为wrotePosition
                 byteBuffer.limit(writePos);
+                //讲数据写入到fileChannel中
                 this.fileChannel.position(lastCommittedPosition);
                 this.fileChannel.write(byteBuffer);
+                //更改写指针
                 this.committedPosition.set(writePos);
             } catch (Throwable e) {
                 log.error("Error occurred when commit data to FileChannel.", e);
@@ -357,13 +369,14 @@ public class MappedFile extends ReferenceResource {
     }
 
     protected boolean isAbleToCommit(final int commitLeastPages) {
+        //分别获取到可以刷新和写的指针
         int flush = this.committedPosition.get();
         int write = this.wrotePosition.get();
 
         if (this.isFull()) {
             return true;
         }
-
+        //判断是否达到了最小写的页数
         if (commitLeastPages > 0) {
             return ((write / OS_PAGE_SIZE) - (flush / OS_PAGE_SIZE)) >= commitLeastPages;
         }
@@ -441,7 +454,7 @@ public class MappedFile extends ReferenceResource {
         return true;
     }
 
-    public boolean destroy(final long intervalForcibly) {
+    public boolean destroy(/*存活的最大时间*/ final long intervalForcibly) {
         this.shutdown(intervalForcibly);
 
         if (this.isCleanupOver()) {

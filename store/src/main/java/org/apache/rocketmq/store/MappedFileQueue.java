@@ -150,9 +150,10 @@ public class MappedFileQueue {
         File[] files = dir.listFiles();
         if (files != null) {
             // ascending order
+            //进行排序
             Arrays.sort(files);
             for (File file : files) {
-
+                //如果文件大小和配置的单个大小不一致,就进行推出
                 if (file.length() != this.mappedFileSize) {
                     log.warn(file + "\t" + file.length()
                         + " length not matched message store config value, please check it manually");
@@ -160,8 +161,9 @@ public class MappedFileQueue {
                 }
 
                 try {
+                    //开始常见内存中的mappedFile
                     MappedFile mappedFile = new MappedFile(file.getPath(), mappedFileSize);
-
+                    //都设置为文件上限
                     mappedFile.setWrotePosition(this.mappedFileSize);
                     mappedFile.setFlushedPosition(this.mappedFileSize);
                     mappedFile.setCommittedPosition(this.mappedFileSize);
@@ -339,7 +341,7 @@ public class MappedFileQueue {
         final long intervalForcibly,
         final boolean cleanImmediately) {
         Object[] mfs = this.copyMappedFiles(0);
-
+        //拿到所有的file
         if (null == mfs)
             return 0;
 
@@ -347,10 +349,14 @@ public class MappedFileQueue {
         int deleteCount = 0;
         List<MappedFile> files = new ArrayList<MappedFile>();
         if (null != mfs) {
+            //进行遍历
             for (int i = 0; i < mfsLength; i++) {
                 MappedFile mappedFile = (MappedFile) mfs[i];
+                //获取到文件最后一次更新时间,然后加上可以存活时间
                 long liveMaxTimestamp = mappedFile.getLastModifiedTimestamp() + expiredTime;
+                //如果当前时间大于了上面计算结果
                 if (System.currentTimeMillis() >= liveMaxTimestamp || cleanImmediately) {
+                    //进行删除
                     if (mappedFile.destroy(intervalForcibly)) {
                         files.add(mappedFile);
                         deleteCount++;
