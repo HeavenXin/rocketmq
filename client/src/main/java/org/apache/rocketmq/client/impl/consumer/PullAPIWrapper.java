@@ -154,6 +154,7 @@ public class PullAPIWrapper {
         final CommunicationMode communicationMode,
         final PullCallback pullCallback
     ) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
+        //根据brokerName和BrokerId,从Instance中获取Broker地址,注意返回的内部属性
         FindBrokerResult findBrokerResult =
             this.mQClientFactory.findBrokerAddressInSubscribe(mq.getBrokerName(),
                 this.recalculatePullFromWhichNode(mq), false);
@@ -163,7 +164,7 @@ public class PullAPIWrapper {
                 this.mQClientFactory.findBrokerAddressInSubscribe(mq.getBrokerName(),
                     this.recalculatePullFromWhichNode(mq), false);
         }
-
+        //如果Broker查询结果不为空
         if (findBrokerResult != null) {
             {
                 // check version
@@ -194,6 +195,7 @@ public class PullAPIWrapper {
 
             String brokerAddr = findBrokerResult.getBrokerAddr();
             if (PullSysFlag.hasClassFilterFlag(sysFlagInner)) {
+                //尝试替换brokerAddr
                 brokerAddr = computePullFromWhichFilterServer(mq.getTopic(), brokerAddr);
             }
 

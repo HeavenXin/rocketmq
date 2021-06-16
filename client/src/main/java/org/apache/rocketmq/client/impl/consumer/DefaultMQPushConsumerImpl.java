@@ -406,6 +406,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
         boolean commitOffsetEnable = false;
         long commitOffsetValue = 0L;
+        //获取提交偏移量,因为只有集群的是保存在本地的
         if (MessageModel.CLUSTERING == this.defaultMQPushConsumer.getMessageModel()) {
             commitOffsetValue = this.offsetStore.readOffset(pullRequest.getMessageQueue(), ReadOffsetType.READ_FROM_MEMORY);
             if (commitOffsetValue > 0) {
@@ -418,12 +419,13 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         SubscriptionData sd = this.rebalanceImpl.getSubscriptionInner().get(pullRequest.getMessageQueue().getTopic());
         if (sd != null) {
             if (this.defaultMQPushConsumer.isPostSubscriptionWhenPull() && !sd.isClassFilterMode()) {
+                //消息过滤表达式的获取
                 subExpression = sd.getSubString();
             }
 
             classFilter = sd.isClassFilterMode();
         }
-
+        //拼接sysFlag ,根据不同的条件是否满足,来进行拼接为一个int
         int sysFlag = PullSysFlag.buildSysFlag(
             commitOffsetEnable, // commitOffset
             true, // suspend
@@ -431,18 +433,27 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             classFilter // class filter
         );
         try {
+            //调用pullKernelImpl与服务器端进行交互
             this.pullAPIWrapper.pullKernelImpl(
+                    //获取到消息队列
                 pullRequest.getMessageQueue(),
+                //消息表达式
                 subExpression,
+                //消息表达式类型
                 subscriptionData.getExpressionType(),
                 subscriptionData.getSubVersion(),
+                //消息偏移量
                 pullRequest.getNextOffset(),
+
                 this.defaultMQPushConsumer.getPullBatchSize(),
-                sysFlag,
+                    //系统标记
+                    sysFlag,
+                //当前MessageQueue的消息进度
                 commitOffsetValue,
                 BROKER_SUSPEND_MAX_TIME_MILLIS,
                 CONSUMER_TIMEOUT_MILLIS_WHEN_SUSPEND,
                 CommunicationMode.ASYNC,
+                //回调函数
                 pullCallback
             );
         } catch (Exception e) {

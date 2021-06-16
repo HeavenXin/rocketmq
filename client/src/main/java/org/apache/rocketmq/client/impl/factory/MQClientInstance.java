@@ -1065,7 +1065,7 @@ public class MQClientInstance {
                 found = true;
             }
         }
-
+        //返回数据结构,包含Broker地址,是否是从节点 Broker版本
         if (found) {
             return new FindBrokerResult(brokerAddr, slave, findBrokerVersion(brokerName, brokerAddr));
         }
