@@ -490,7 +490,7 @@ public class DefaultMessageStore implements MessageStore {
 
         long beginTime = this.getSystemClock().now();
         PutMessageResult result = this.commitLog.putMessage(msg);
-        //抛开刷库的延迟,我们走上面你的commitLog的放入消息
+        //抛开刷库的延迟,我们走上面的commitLog的放入消息
         long elapsedTime = this.getSystemClock().now() - beginTime;
         if (elapsedTime > 500) {
             log.warn("not in lock elapsed time(ms)={}, bodyLength={}", elapsedTime, msg.getBody().length);
@@ -1379,28 +1379,34 @@ public class DefaultMessageStore implements MessageStore {
     }
 
     private boolean loadConsumeQueue() {
+        //获取到目录
         File dirLogic = new File(StorePathConfigHelper.getStorePathConsumeQueue(this.messageStoreConfig.getStorePathRootDir()));
+        //目录下所有的file
         File[] fileTopicList = dirLogic.listFiles();
         if (fileTopicList != null) {
-
+            //获取到该Borker存储的所有主题,进行遍历主题目录
             for (File fileTopic : fileTopicList) {
+                //得到了主题
                 String topic = fileTopic.getName();
-
+                //之后得到这个主题下的文件,进行遍历
                 File[] fileQueueIdList = fileTopic.listFiles();
                 if (fileQueueIdList != null) {
                     for (File fileQueueId : fileQueueIdList) {
                         int queueId;
                         try {
+                            //尝试获取到消费队列Id
                             queueId = Integer.parseInt(fileQueueId.getName());
                         } catch (NumberFormatException e) {
                             continue;
                         }
+                        //常见消费队列内存数据结构
                         ConsumeQueue logic = new ConsumeQueue(
                             topic,
                             queueId,
                             StorePathConfigHelper.getStorePathConsumeQueue(this.messageStoreConfig.getStorePathRootDir()),
                             this.getMessageStoreConfig().getMappedFileSizeConsumeQueue(),
                             this);
+                        //主要初始化的属性有 topic queueId storePath mappedFileSize属性
                         this.putConsumeQueue(topic, queueId, logic);
                         if (!logic.load()) {
                             return false;
@@ -1623,13 +1629,20 @@ public class DefaultMessageStore implements MessageStore {
         }
 
         private void deleteExpiredFiles() {
+            //刪除數量
             int deleteCount = 0;
+            //文件保留时间.是根据文件更新时间戳进行判断过期的依据
             long fileReservedTime = DefaultMessageStore.this.getMessageStoreConfig().getFileReservedTime();
+            //删除文件的间隔,多删的时候,指定删除的每次间隔
             int deletePhysicFilesInterval = DefaultMessageStore.this.getMessageStoreConfig().getDeleteCommitLogFilesInterval();
+            //如果有文件拒绝被删除,则记录这个时间,在下面的规定时间间隔到了之后,强制删除
             int destroyMapedFileIntervalForcibly = DefaultMessageStore.this.getMessageStoreConfig().getDestroyMapedFileIntervalForcibly();
-
+            //三种情况满足其一,进行删除
+            //指定删除文件的时间点,deleteWhen设置一个固定删除的时间点,默认是凌晨4点
             boolean timeup = this.isTimeToDelete();
-            boolean spacefull = this.isSpaceToDelete();
+            //磁盘空间是否充足
+            boolean spacefull = this. isSpaceToDelete();
+            //手动触发,暂无提供响应的指令
             boolean manualDelete = this.manualDeleteFileSeveralTimes > 0;
 
             if (timeup || spacefull || manualDelete) {
@@ -1647,7 +1660,7 @@ public class DefaultMessageStore implements MessageStore {
                     cleanAtOnce);
 
                 fileReservedTime *= 60 * 60 * 1000;
-
+                //执行删除
                 deleteCount = DefaultMessageStore.this.commitLog.deleteExpiredFile(fileReservedTime, deletePhysicFilesInterval,
                     destroyMapedFileIntervalForcibly, cleanAtOnce);
                 if (deleteCount > 0) {
@@ -1682,13 +1695,15 @@ public class DefaultMessageStore implements MessageStore {
 
             return false;
         }
-
+        //检测磁盘是否充足
         private boolean isSpaceToDelete() {
+            //DiskMaxUsedSpaceRatio 最大使用率
             double ratio = DefaultMessageStore.this.getMessageStoreConfig().getDiskMaxUsedSpaceRatio() / 100.0;
-
+            //是否立刻执行清除过期文件操作
             cleanImmediately = false;
 
             {
+                //获取到物理使用率
                 double physicRatio = UtilAll.getDiskPartitionSpaceUsedPercent(getStorePathPhysic());
                 if (physicRatio > diskSpaceWarningLevelRatio) {
                     boolean diskok = DefaultMessageStore.this.runningFlags.getAndMakeDiskFull();
@@ -1941,12 +1956,16 @@ public class DefaultMessageStore implements MessageStore {
                         this.reputFromOffset = result.getStartOffset();
 
                         for (int readSize = 0; readSize < result.getSize() && doNext; ) {
+                            //获取一条消息
                             DispatchRequest dispatchRequest =
                                 DefaultMessageStore.this.commitLog.checkMessageAndReturnSize(result.getByteBuffer(), false, false);
+                            //然后进行校验消息大小是否正确
                             int size = dispatchRequest.getBufferSize() == -1 ? dispatchRequest.getMsgSize() : dispatchRequest.getBufferSize();
 
                             if (dispatchRequest.isSuccess()) {
+                                //的确有消息
                                 if (size > 0) {
+                                    //进行转发
                                     DefaultMessageStore.this.doDispatch(dispatchRequest);
 
                                     if (BrokerRole.SLAVE != DefaultMessageStore.this.getMessageStoreConfig().getBrokerRole()

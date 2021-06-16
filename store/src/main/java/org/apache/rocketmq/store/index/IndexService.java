@@ -199,13 +199,16 @@ public class IndexService {
     }
 
     public void buildIndex(DispatchRequest req) {
+        //首先获取IndexFile
         IndexFile indexFile = retryGetAndCreateIndexFile();
         if (indexFile != null) {
+            //获取到最大的物理偏移量
             long endPhyOffset = indexFile.getEndPhyOffset();
             DispatchRequest msg = req;
             String topic = msg.getTopic();
             String keys = msg.getKeys();
             if (msg.getCommitLogOffset() < endPhyOffset) {
+                //小于了索引文件中的物理偏移量,重复数据,忽略本次索引构建
                 return;
             }
 
