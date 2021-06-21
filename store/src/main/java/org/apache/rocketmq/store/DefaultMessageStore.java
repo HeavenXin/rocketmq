@@ -554,9 +554,11 @@ public class DefaultMessageStore implements MessageStore {
     public CommitLog getCommitLog() {
         return commitLog;
     }
-
+                                            //消费组信息             主题                  队列Id                待拉取偏移量
     public GetMessageResult getMessage(final String group, final String topic, final int queueId, final long offset,
+        //最大拉取消息条件
         final int maxMsgNums,
+        //消息过滤器
         final MessageFilter messageFilter) {
         if (this.shutdown) {
             log.warn("message store has shutdown, so getMessage is forbidden");
