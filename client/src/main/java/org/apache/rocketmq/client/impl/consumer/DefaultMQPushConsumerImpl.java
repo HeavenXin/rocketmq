@@ -312,7 +312,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                 if (pullResult != null) {
                     pullResult = DefaultMQPushConsumerImpl.this.pullAPIWrapper.processPullResult(pullRequest.getMessageQueue(), pullResult,
                         subscriptionData);
-
+                    //get 返回的状态,这里的状态,是由MQClientAPIImpl中的processPullResponse解析的
                     switch (pullResult.getPullStatus()) {
                         case FOUND:
                             long prevRequestOffset = pullRequest.getNextOffset();

@@ -569,38 +569,47 @@ public class DefaultMessageStore implements MessageStore {
         }
 
         long beginTime = this.getSystemClock().now();
-
+        //初始化这个status,直接返回这个,会导致消费端将Queue移除
         GetMessageStatus status = GetMessageStatus.NO_MESSAGE_IN_QUEUE;
         long nextBeginOffset = offset;
         long minOffset = 0;
         long maxOffset = 0;
-
+        //新建一个result
         GetMessageResult getResult = new GetMessageResult();
-
+        //获取这个commitlog的最大偏移量
         final long maxOffsetPy = this.commitLog.getMaxOffset();
-
+        //查找ConsumeQueue
         ConsumeQueue consumeQueue = findConsumeQueue(topic, queueId);
         if (consumeQueue != null) {
+            //设置队列中的最大最小偏移量
             minOffset = consumeQueue.getMinOffsetInQueue();
             maxOffset = consumeQueue.getMaxOffsetInQueue();
-
+            //进行判断,下面都是核心逻辑
             if (maxOffset == 0) {
+                //如果maxOffset都等于0了,说明已经没有消息了
                 status = GetMessageStatus.NO_MESSAGE_IN_QUEUE;
+                //返回原来偏移量或者0
                 nextBeginOffset = nextOffsetCorrection(offset, 0);
             } else if (offset < minOffset) {
+                //拉取偏移量小于最小偏移量
                 status = GetMessageStatus.OFFSET_TOO_SMALL;
+                //返回原偏移量或者最小偏移量
                 nextBeginOffset = nextOffsetCorrection(offset, minOffset);
             } else if (offset == maxOffset) {
+                //已经是最大偏移量了,就等一等
                 status = GetMessageStatus.OFFSET_OVERFLOW_ONE;
                 nextBeginOffset = nextOffsetCorrection(offset, offset);
             } else if (offset > maxOffset) {
+                //越界行为
                 status = GetMessageStatus.OFFSET_OVERFLOW_BADLY;
+                //根据minoffset,分别决定返回minoffset和maxoffset
                 if (0 == minOffset) {
                     nextBeginOffset = nextOffsetCorrection(offset, minOffset);
                 } else {
                     nextBeginOffset = nextOffsetCorrection(offset, maxOffset);
                 }
             } else {
+                //normal 流程,获取到偏移量后32个消息,然后然后设置max min offset
                 SelectMappedBufferResult bufferConsumeQueue = consumeQueue.getIndexBuffer(offset);
                 if (bufferConsumeQueue != null) {
                     try {

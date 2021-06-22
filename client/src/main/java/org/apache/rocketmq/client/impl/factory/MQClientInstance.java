@@ -1048,12 +1048,14 @@ public class MQClientInstance {
         boolean found = false;
 
         HashMap<Long/* brokerId */, String/* address */> map = this.brokerAddrTable.get(brokerName);
+        //根据节点民称获取到所有的节点Id
         if (map != null && !map.isEmpty()) {
             brokerAddr = map.get(brokerId);
             slave = brokerId != MixAll.MASTER_ID;
             found = brokerAddr != null;
-
+            //如果没找到并且是Id是从节点
             if (!found && slave) {
+                //从新获取
                 brokerAddr = map.get(brokerId + 1);
                 found = brokerAddr != null;
             }

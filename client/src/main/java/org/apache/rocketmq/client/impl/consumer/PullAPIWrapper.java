@@ -66,7 +66,7 @@ public class PullAPIWrapper {
         this.consumerGroup = consumerGroup;
         this.unitMode = unitMode;
     }
-
+    //前置解析
     public PullResult processPullResult(final MessageQueue mq, final PullResult pullResult,
         final SubscriptionData subscriptionData) {
         PullResultExt pullResultExt = (PullResultExt) pullResult;
@@ -75,7 +75,7 @@ public class PullAPIWrapper {
         if (PullStatus.FOUND == pullResult.getPullStatus()) {
             ByteBuffer byteBuffer = ByteBuffer.wrap(pullResultExt.getMessageBinary());
             List<MessageExt> msgList = MessageDecoder.decodes(byteBuffer);
-
+            //进行一层过滤
             List<MessageExt> msgListFilterAgain = msgList;
             if (!subscriptionData.getTagsSet().isEmpty() && !subscriptionData.isClassFilterMode()) {
                 msgListFilterAgain = new ArrayList<MessageExt>(msgList.size());
@@ -106,7 +106,7 @@ public class PullAPIWrapper {
                     Long.toString(pullResult.getMaxOffset()));
                 msg.setBrokerName(mq.getBrokerName());
             }
-
+            //放回去
             pullResultExt.setMsgFoundList(msgListFilterAgain);
         }
 

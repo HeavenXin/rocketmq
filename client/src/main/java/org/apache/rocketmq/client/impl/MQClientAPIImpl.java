@@ -745,6 +745,8 @@ public class MQClientAPIImpl {
                     try {
                         PullResult pullResult = MQClientAPIImpl.this.processPullResponse(response, addr);
                         assert pullResult != null;
+                        //拉取完成,返回的入口
+                        //分别走成功和失败
                         pullCallback.onSuccess(pullResult);
                     } catch (Exception e) {
                         pullCallback.onException(e);
@@ -772,7 +774,7 @@ public class MQClientAPIImpl {
         assert response != null;
         return this.processPullResponse(response, addr);
     }
-
+    //在这里将response转为PullResult
     private PullResult processPullResponse(
         final RemotingCommand response,
         final String addr) throws MQBrokerException, RemotingCommandException {
