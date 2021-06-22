@@ -198,7 +198,7 @@ public class PullAPIWrapper {
                 //尝试替换brokerAddr
                 brokerAddr = computePullFromWhichFilterServer(mq.getTopic(), brokerAddr);
             }
-
+            //实际利用MqClient发送pullRequest
             PullResult pullResult = this.mQClientFactory.getMQClientAPIImpl().pullMessage(
                 brokerAddr,
                 requestHeader,

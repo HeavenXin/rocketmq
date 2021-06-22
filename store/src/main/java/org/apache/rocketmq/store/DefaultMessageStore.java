@@ -554,9 +554,11 @@ public class DefaultMessageStore implements MessageStore {
     public CommitLog getCommitLog() {
         return commitLog;
     }
-
+                                            //消费组信息             主题                  队列Id                待拉取偏移量
     public GetMessageResult getMessage(final String group, final String topic, final int queueId, final long offset,
+        //最大拉取消息条件
         final int maxMsgNums,
+        //消息过滤器
         final MessageFilter messageFilter) {
         if (this.shutdown) {
             log.warn("message store has shutdown, so getMessage is forbidden");
@@ -582,8 +584,10 @@ public class DefaultMessageStore implements MessageStore {
         ConsumeQueue consumeQueue = findConsumeQueue(topic, queueId);
         if (consumeQueue != null) {
             //设置队列中的最大最小偏移量
+            //根据Queue初始化偏移量
             minOffset = consumeQueue.getMinOffsetInQueue();
             maxOffset = consumeQueue.getMaxOffsetInQueue();
+            //根据状态以及下一次拉取的偏移量
             //进行判断,下面都是核心逻辑
             if (maxOffset == 0) {
                 //如果maxOffset都等于0了,说明已经没有消息了
