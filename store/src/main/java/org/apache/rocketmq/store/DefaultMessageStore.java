@@ -1980,9 +1980,10 @@ public class DefaultMessageStore implements MessageStore {
                                 if (size > 0) {
                                     //进行转发
                                     DefaultMessageStore.this.doDispatch(dispatchRequest);
-
+                                    //此处进行唤醒Request
                                     if (BrokerRole.SLAVE != DefaultMessageStore.this.getMessageStoreConfig().getBrokerRole()
                                         && DefaultMessageStore.this.brokerConfig.isLongPollingEnable()) {
+                                        //通知Listener,消息到达了
                                         DefaultMessageStore.this.messageArrivingListener.arriving(dispatchRequest.getTopic(),
                                             dispatchRequest.getQueueId(), dispatchRequest.getConsumeQueueOffset() + 1,
                                             dispatchRequest.getTagsCode(), dispatchRequest.getStoreTimestamp(),
