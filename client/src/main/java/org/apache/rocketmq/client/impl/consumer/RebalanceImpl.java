@@ -378,15 +378,17 @@ public abstract class RebalanceImpl {
         //遍历这次的新获取的MQ
         for (MessageQueue mq : mqSet) {
             //如果之前的没有,说明这是新的
+            //如果不包含这一个,则是这一次新分配的消息队列
             if (!this.processQueueTable.containsKey(mq)) {
                 if (isOrder && !this.lock(mq)) {
                     log.warn("doRebalance, {}, add a new mq failed, {}, because lock failed", consumerGroup, mq);
                     continue;
                 }
-
+                //
                 this.removeDirtyOffset(mq);
                 //同时创建一个新的消息队列
                 ProcessQueue pq = new ProcessQueue();
+                //获取消费进度
                 //从磁盘获取偏移量
                 long nextOffset = this.computePullFromWhere(mq);
                 if (nextOffset >= 0) {
@@ -410,7 +412,7 @@ public abstract class RebalanceImpl {
                 }
             }
         }
-
+        //分发PullRequest
         this.dispatchPullRequest(pullRequestList);
 
         return changed;

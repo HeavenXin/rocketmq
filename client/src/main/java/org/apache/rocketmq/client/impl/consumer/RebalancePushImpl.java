@@ -147,11 +147,13 @@ public class RebalancePushImpl extends RebalanceImpl {
             case CONSUME_FROM_MIN_OFFSET:
             case CONSUME_FROM_MAX_OFFSET:
             case CONSUME_FROM_LAST_OFFSET: {
+                //从最新的偏移量开始消费
                 long lastOffset = offsetStore.readOffset(mq, ReadOffsetType.READ_FROM_STORE);
+                //正常情况
                 if (lastOffset >= 0) {
                     result = lastOffset;
                 }
-                // First start,no offset
+                //第一次拉取文件
                 else if (-1 == lastOffset) {
                     if (mq.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
                         result = 0L;
@@ -163,15 +165,19 @@ public class RebalancePushImpl extends RebalanceImpl {
                         }
                     }
                 } else {
+                    //返回-1 表示存储了错误的数值
                     result = -1;
                 }
                 break;
             }
             case CONSUME_FROM_FIRST_OFFSET: {
+                //从头开始消费
                 long lastOffset = offsetStore.readOffset(mq, ReadOffsetType.READ_FROM_STORE);
                 if (lastOffset >= 0) {
+                    //正常
                     result = lastOffset;
                 } else if (-1 == lastOffset) {
+                    //第一次
                     result = 0L;
                 } else {
                     result = -1;
@@ -179,10 +185,14 @@ public class RebalancePushImpl extends RebalanceImpl {
                 break;
             }
             case CONSUME_FROM_TIMESTAMP: {
+                //获取到最后一次消费进度
                 long lastOffset = offsetStore.readOffset(mq, ReadOffsetType.READ_FROM_STORE);
                 if (lastOffset >= 0) {
+                    //正常
                     result = lastOffset;
                 } else if (-1 == lastOffset) {
+                    //第一次
+                    //如果支持重试
                     if (mq.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
                         try {
                             result = this.mQClientFactory.getMQAdminImpl().maxOffset(mq);
@@ -191,8 +201,10 @@ public class RebalancePushImpl extends RebalanceImpl {
                         }
                     } else {
                         try {
+                            //获取消费者气动阀时间
                             long timestamp = UtilAll.parseDate(this.defaultMQPushConsumerImpl.getDefaultMQPushConsumer().getConsumeTimestamp(),
                                 UtilAll.YYYYMMDDHHMMSS).getTime();
+                            //搜索offset
                             result = this.mQClientFactory.getMQAdminImpl().searchOffset(mq, timestamp);
                         } catch (MQClientException e) {
                             result = -1;
