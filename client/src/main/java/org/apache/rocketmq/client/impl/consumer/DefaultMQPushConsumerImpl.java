@@ -1171,12 +1171,15 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
         return queueTimeSpan;
     }
-
-    public void resetRetryAndNamespace(final List<MessageExt> msgs, String consumerGroup) {
+    //用于恢复主题名
+    public void resetRetryAndNamespace(final List<MessageExt> msgs, /*group名称*/String consumerGroup) {
         final String groupTopic = MixAll.getRetryTopic(consumerGroup);
+        //获取到所有的msg,一般只有一个
         for (MessageExt msg : msgs) {
+            //如果在延迟topic这个属性中拿到了
             String retryTopic = msg.getProperty(MessageConst.PROPERTY_RETRY_TOPIC);
             if (retryTopic != null && groupTopic.equals(msg.getTopic())) {
+                //且校验成功
                 msg.setTopic(retryTopic);
             }
 

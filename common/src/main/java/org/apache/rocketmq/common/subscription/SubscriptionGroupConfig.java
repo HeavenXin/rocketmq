@@ -20,22 +20,23 @@ package org.apache.rocketmq.common.subscription;
 import org.apache.rocketmq.common.MixAll;
 
 public class SubscriptionGroupConfig {
-
+    //消费组名
     private String groupName;
-
+    //是否可以消费
     private boolean consumeEnable = true;
+    //是否允许从最小偏移量开始消费
     private boolean consumeFromMinEnable = true;
-
+    //以广播模式消费
     private boolean consumeBroadcastEnable = true;
-
+    //重试队列,默认为1
     private int retryQueueNums = 1;
-
+    //最大重试次数
     private int retryMaxTimes = 16;
 
     private long brokerId = MixAll.MASTER_ID;
-
+    //如果消息阻塞 将转向 这个broker上拉取消息
     private long whichBrokerWhenConsumeSlowly = 1;
-
+    //是否立刻开始重新负载
     private boolean notifyConsumerIdsChangedEnable = true;
 
     public String getGroupName() {
