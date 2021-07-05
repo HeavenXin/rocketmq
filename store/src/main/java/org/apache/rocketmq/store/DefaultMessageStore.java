@@ -657,13 +657,14 @@ public class DefaultMessageStore implements MessageStore {
                                     isTagsCodeLegal = false;
                                 }
                             }
-
+                            //这一步是检查是否符合过滤条件
                             if (messageFilter != null
+                                    //不符合条件的话
                                 && !messageFilter.isMatchedByConsumeQueue(isTagsCodeLegal ? tagsCode : null, extRet ? cqExtUnit : null)) {
                                 if (getResult.getBufferTotalSize() == 0) {
                                     status = GetMessageStatus.NO_MATCHED_MESSAGE;
                                 }
-
+                                //跳过
                                 continue;
                             }
 
@@ -676,8 +677,9 @@ public class DefaultMessageStore implements MessageStore {
                                 nextPhyFileStartOffset = this.commitLog.rollNextFile(offsetPy);
                                 continue;
                             }
-
+                            //这一步检查CommitLog中的存储是否符合过滤
                             if (messageFilter != null
+                                    //这一步,tag模式下,isMatchedByCommitLog直接返回true,交由消费者端进行精确的匹配
                                 && !messageFilter.isMatchedByCommitLog(selectResult.getByteBuffer().slice(), null)) {
                                 if (getResult.getBufferTotalSize() == 0) {
                                     status = GetMessageStatus.NO_MATCHED_MESSAGE;

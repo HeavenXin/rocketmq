@@ -27,6 +27,7 @@ public interface MessageFilter {
      * @param tagsCode tagsCode
      * @param cqExtUnit extend unit of consume queue
      */
+    //根据ConsumerQueue判断消息是否匹配
     boolean isMatchedByConsumeQueue(final Long tagsCode,
         final ConsumeQueueExt.CqExtUnit cqExtUnit);
 

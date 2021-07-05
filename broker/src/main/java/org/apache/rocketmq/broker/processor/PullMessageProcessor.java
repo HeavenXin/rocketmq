@@ -150,15 +150,19 @@ public class PullMessageProcessor extends AsyncNettyRequestProcessor implements 
             response.setRemark(errorInfo);
             return response;
         }
-
+        //获取订阅信息
         SubscriptionData subscriptionData = null;
         ConsumerFilterData consumerFilterData = null;
+        //解析获得
         if (hasSubscriptionFlag) {
             try {
+                //构建subsciptionData
                 subscriptionData = FilterAPI.build(
                     requestHeader.getTopic(), requestHeader.getSubscription(), requestHeader.getExpressionType()
                 );
+                //如果不是Tag类型
                 if (!ExpressionType.isTagType(subscriptionData.getExpressionType())) {
+                    //构建consumerFilterData
                     consumerFilterData = ConsumerFilterManager.build(
                         requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getSubscription(),
                         requestHeader.getExpressionType(), requestHeader.getSubVersion()
@@ -228,8 +232,9 @@ public class PullMessageProcessor extends AsyncNettyRequestProcessor implements 
             response.setRemark("The broker does not support consumer to filter message by " + subscriptionData.getExpressionType());
             return response;
         }
-
+        //根据上面的订阅信息和订阅过滤信息,构建实际的过滤器
         MessageFilter messageFilter;
+        //根据是不是支持重试,进行不同的过滤
         if (this.brokerController.getBrokerConfig().isFilterSupportRetry()) {
             messageFilter = new ExpressionForRetryMessageFilter(subscriptionData, consumerFilterData,
                 this.brokerController.getConsumerFilterManager());
