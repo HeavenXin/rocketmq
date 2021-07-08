@@ -268,11 +268,15 @@ public class ProcessQueue {
 
     public long commit() {
         try {
+            //尝试获取锁
             this.lockTreeMap.writeLock().lockInterruptibly();
             try {
+                //最新的偏移量
                 Long offset = this.consumingMsgOrderlyTreeMap.lastKey();
+                //减去待消费的数量
                 msgCount.addAndGet(0 - this.consumingMsgOrderlyTreeMap.size());
                 for (MessageExt msg : this.consumingMsgOrderlyTreeMap.values()) {
+                    //减去每一个消息的长度
                     msgSize.addAndGet(0 - msg.getBody().length);
                 }
                 this.consumingMsgOrderlyTreeMap.clear();
@@ -280,6 +284,7 @@ public class ProcessQueue {
                     return offset + 1;
                 }
             } finally {
+                //解锁
                 this.lockTreeMap.writeLock().unlock();
             }
         } catch (InterruptedException e) {
