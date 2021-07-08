@@ -105,7 +105,7 @@ public class HAService {
     // public void notifyTransferSome() {
     // this.groupTransferService.notifyTransferSome();
     // }
-
+    //开始函数
     public void start() throws Exception {
         this.acceptSocketService.beginAccept();
         this.acceptSocketService.start();
@@ -158,8 +158,11 @@ public class HAService {
      * Listens to slave connections to create {@link HAConnection}.
      */
     class AcceptSocketService extends ServiceThread {
+        //Broker服务监听套接字 (本地IP+端口号)
         private final SocketAddress socketAddressListen;
+        //服务端Socket通道,NIO的?
         private ServerSocketChannel serverSocketChannel;
+        //事件选择器
         private Selector selector;
 
         public AcceptSocketService(final int port) {
@@ -172,11 +175,16 @@ public class HAService {
          * @throws Exception If fails.
          */
         public void beginAccept() throws Exception {
+            //创建一个Channel
             this.serverSocketChannel = ServerSocketChannel.open();
+            //创建事件选择器
             this.selector = RemotingUtil.openSelector();
             this.serverSocketChannel.socket().setReuseAddress(true);
+            //设置监听端口
             this.serverSocketChannel.socket().bind(this.socketAddressListen);
+            //是否阻塞
             this.serverSocketChannel.configureBlocking(false);
+            //注册连接诶时间
             this.serverSocketChannel.register(this.selector, SelectionKey.OP_ACCEPT);
         }
 
@@ -203,12 +211,14 @@ public class HAService {
 
             while (!this.isStopped()) {
                 try {
+                    //等待1000毫秒
                     this.selector.select(1000);
                     Set<SelectionKey> selected = this.selector.selectedKeys();
 
                     if (selected != null) {
                         for (SelectionKey k : selected) {
                             if ((k.readyOps() & SelectionKey.OP_ACCEPT) != 0) {
+                                //获取到Channel通道
                                 SocketChannel sc = ((ServerSocketChannel) k.channel()).accept();
 
                                 if (sc != null) {
@@ -216,8 +226,11 @@ public class HAService {
                                         + sc.socket().getRemoteSocketAddress());
 
                                     try {
+                                        //为每一个Channel创建一个HAConnection
                                         HAConnection conn = new HAConnection(HAService.this, sc);
+                                        //启动
                                         conn.start();
+                                        //添加到Connection
                                         HAService.this.addConnection(conn);
                                     } catch (Exception e) {
                                         log.error("new HAConnection exception", e);
