@@ -584,6 +584,7 @@ public class MQClientInstance {
     }
 
     private void uploadFilterClassSource() {
+        //获取到所有的
         Iterator<Entry<String, MQConsumerInner>> it = this.consumerTable.entrySet().iterator();
         while (it.hasNext()) {
             Entry<String, MQConsumerInner> next = it.next();
@@ -778,7 +779,9 @@ public class MQClientInstance {
                 Entry<String, List<String>> next = it.next();
                 List<String> value = next.getValue();
                 for (final String fsAddr : value) {
+                    //获取到每个Addr
                     try {
+                        //调用实际的网络交互,进行注册
                         this.mQClientAPIImpl.registerMessageFilterClass(fsAddr, consumerGroup, topic, fullClassName, classCRC, classBody,
                             5000);
 

@@ -82,7 +82,7 @@ public class FilterServerManager {
         if (this.brokerController.getBrokerConfig().getNamesrvAddr() != null) {
             config += String.format(" -n %s", this.brokerController.getBrokerConfig().getNamesrvAddr());
         }
-
+        //这里的是否是win是利用的osName进行判断的
         if (RemotingUtil.isWindowsPlatform()) {
             return String.format("start /b %s\\bin\\mqfiltersrv.exe %s",
                 this.brokerController.getBrokerConfig().getRocketmqHome(),
@@ -99,10 +99,13 @@ public class FilterServerManager {
     }
 
     public void registerFilterServer(final Channel channel, final String filterServerAddr) {
+        //根据channel为key,返回FilterServer信息
         FilterServerInfo filterServerInfo = this.filterServerTable.get(channel);
         if (filterServerInfo != null) {
+            //不为null,更新一下
             filterServerInfo.setLastUpdateTimestamp(System.currentTimeMillis());
         } else {
+            //不然就创建一个细腻的
             filterServerInfo = new FilterServerInfo();
             filterServerInfo.setFilterServerAddr(filterServerAddr);
             filterServerInfo.setLastUpdateTimestamp(System.currentTimeMillis());

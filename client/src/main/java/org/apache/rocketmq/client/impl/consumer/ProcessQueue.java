@@ -296,10 +296,13 @@ public class ProcessQueue {
 
     public void makeMessageToConsumeAgain(List<MessageExt> msgs) {
         try {
+            //加锁
             this.lockTreeMap.writeLock().lockInterruptibly();
             try {
                 for (MessageExt msg : msgs) {
+                    //从消费中去除
                     this.consumingMsgOrderlyTreeMap.remove(msg.getQueueOffset());
+                    //加入到等待消费
                     this.msgTreeMap.put(msg.getQueueOffset(), msg);
                 }
             } finally {
