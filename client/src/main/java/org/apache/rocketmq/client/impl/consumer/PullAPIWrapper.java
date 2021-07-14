@@ -37,7 +37,6 @@ import org.apache.rocketmq.client.log.ClientLogger;
 import org.apache.rocketmq.common.MQVersion;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.filter.ExpressionType;
-import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.common.message.MessageAccessor;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageDecoder;
@@ -49,8 +48,9 @@ import org.apache.rocketmq.common.protocol.route.TopicRouteData;
 import org.apache.rocketmq.common.sysflag.PullSysFlag;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 
+
 public class PullAPIWrapper {
-    private final InternalLogger log = ClientLogger.getLog();
+    private final Logger log = ClientLogger.getLog();
     private final MQClientInstance mQClientFactory;
     private final String consumerGroup;
     private final boolean unitMode;
@@ -66,7 +66,7 @@ public class PullAPIWrapper {
         this.consumerGroup = consumerGroup;
         this.unitMode = unitMode;
     }
-    //前置解析
+
     public PullResult processPullResult(final MessageQueue mq, final PullResult pullResult,
         final SubscriptionData subscriptionData) {
         PullResultExt pullResultExt = (PullResultExt) pullResult;
@@ -75,7 +75,7 @@ public class PullAPIWrapper {
         if (PullStatus.FOUND == pullResult.getPullStatus()) {
             ByteBuffer byteBuffer = ByteBuffer.wrap(pullResultExt.getMessageBinary());
             List<MessageExt> msgList = MessageDecoder.decodes(byteBuffer);
-            //进行一层过滤
+
             List<MessageExt> msgListFilterAgain = msgList;
             if (!subscriptionData.getTagsSet().isEmpty() && !subscriptionData.isClassFilterMode()) {
                 msgListFilterAgain = new ArrayList<MessageExt>(msgList.size());
@@ -96,17 +96,12 @@ public class PullAPIWrapper {
             }
 
             for (MessageExt msg : msgListFilterAgain) {
-                String traFlag = msg.getProperty(MessageConst.PROPERTY_TRANSACTION_PREPARED);
-                if (Boolean.parseBoolean(traFlag)) {
-                    msg.setTransactionId(msg.getProperty(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX));
-                }
                 MessageAccessor.putProperty(msg, MessageConst.PROPERTY_MIN_OFFSET,
                     Long.toString(pullResult.getMinOffset()));
                 MessageAccessor.putProperty(msg, MessageConst.PROPERTY_MAX_OFFSET,
                     Long.toString(pullResult.getMaxOffset()));
-                msg.setBrokerName(mq.getBrokerName());
             }
-            //放回去
+
             pullResultExt.setMsgFoundList(msgListFilterAgain);
         }
 
@@ -134,7 +129,7 @@ public class PullAPIWrapper {
                 try {
                     hook.filterMessage(context);
                 } catch (Throwable e) {
-                    log.error("execute hook error. hookName={}", hook.hookName());
+                    log.info("execute hook error. hookName={}", hook.hookName());
                 }
             }
         }
@@ -154,7 +149,6 @@ public class PullAPIWrapper {
         final CommunicationMode communicationMode,
         final PullCallback pullCallback
     ) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
-        //根据brokerName和BrokerId,从Instance中获取Broker地址,注意返回的内部属性
         FindBrokerResult findBrokerResult =
             this.mQClientFactory.findBrokerAddressInSubscribe(mq.getBrokerName(),
                 this.recalculatePullFromWhichNode(mq), false);
@@ -164,7 +158,7 @@ public class PullAPIWrapper {
                 this.mQClientFactory.findBrokerAddressInSubscribe(mq.getBrokerName(),
                     this.recalculatePullFromWhichNode(mq), false);
         }
-        //如果Broker查询结果不为空
+
         if (findBrokerResult != null) {
             {
                 // check version
@@ -195,10 +189,9 @@ public class PullAPIWrapper {
 
             String brokerAddr = findBrokerResult.getBrokerAddr();
             if (PullSysFlag.hasClassFilterFlag(sysFlagInner)) {
-                //尝试替换brokerAddr
-                brokerAddr = computePullFromWhichFilterServer(mq.getTopic(), brokerAddr);
+                brokerAddr = computPullFromWhichFilterServer(mq.getTopic(), brokerAddr);
             }
-            //实际利用MqClient发送pullRequest
+
             PullResult pullResult = this.mQClientFactory.getMQClientAPIImpl().pullMessage(
                 brokerAddr,
                 requestHeader,
@@ -210,6 +203,34 @@ public class PullAPIWrapper {
         }
 
         throw new MQClientException("The broker[" + mq.getBrokerName() + "] not exist", null);
+    }
+
+    public PullResult pullKernelImpl(
+        final MessageQueue mq,
+        final String subExpression,
+        final long subVersion,
+        final long offset,
+        final int maxNums,
+        final int sysFlag,
+        final long commitOffset,
+        final long brokerSuspendMaxTimeMillis,
+        final long timeoutMillis,
+        final CommunicationMode communicationMode,
+        final PullCallback pullCallback
+    ) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
+        return pullKernelImpl(
+            mq,
+            subExpression,
+            ExpressionType.TAG,
+            subVersion, offset,
+            maxNums,
+            sysFlag,
+            commitOffset,
+            brokerSuspendMaxTimeMillis,
+            timeoutMillis,
+            communicationMode,
+            pullCallback
+        );
     }
 
     public long recalculatePullFromWhichNode(final MessageQueue mq) {
@@ -225,11 +246,14 @@ public class PullAPIWrapper {
         return MixAll.MASTER_ID;
     }
 
-    private String computePullFromWhichFilterServer(final String topic, final String brokerAddr)
+    private String computPullFromWhichFilterServer(final String topic, final String brokerAddr)
         throws MQClientException {
+        //获取到所有的TopicRoute
         ConcurrentMap<String, TopicRouteData> topicRouteTable = this.mQClientFactory.getTopicRouteTable();
         if (topicRouteTable != null) {
+            //获取到TopicRouteData
             TopicRouteData topicRouteData = topicRouteTable.get(topic);
+            //根据Addr获取到list
             List<String> list = topicRouteData.getFilterServerTable().get(brokerAddr);
 
             if (list != null && !list.isEmpty()) {
