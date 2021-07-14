@@ -118,6 +118,7 @@ public abstract class RebalanceImpl {
     private HashMap<String/* brokerName */, Set<MessageQueue>> buildProcessQueueTableByBrokerName() {
         HashMap<String, Set<MessageQueue>> result = new HashMap<String, Set<MessageQueue>>();
         for (MessageQueue mq : this.processQueueTable.keySet()) {
+            //遍历获得Set的MessageQueue
             Set<MessageQueue> mqs = result.get(mq.getBrokerName());
             if (null == mqs) {
                 mqs = new HashSet<MessageQueue>();
@@ -126,7 +127,7 @@ public abstract class RebalanceImpl {
 
             mqs.add(mq);
         }
-
+        //组成 brokerName - set<MessageQueue>的映射
         return result;
     }
 
@@ -174,31 +175,36 @@ public abstract class RebalanceImpl {
 
             if (mqs.isEmpty())
                 continue;
-
+            //获取到Broker的Master节点
             FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(brokerName, MixAll.MASTER_ID, true);
             if (findBrokerResult != null) {
+                //创建锁定请求
                 LockBatchRequestBody requestBody = new LockBatchRequestBody();
                 requestBody.setConsumerGroup(this.consumerGroup);
                 requestBody.setClientId(this.mQClientFactory.getClientId());
                 requestBody.setMqSet(mqs);
 
                 try {
+                    //尝试锁定
                     Set<MessageQueue> lockOKMQSet =
                         this.mQClientFactory.getMQClientAPIImpl().lockBatchMQ(findBrokerResult.getBrokerAddr(), requestBody, 1000);
-
+                    //遍历返回的结果
                     for (MessageQueue mq : lockOKMQSet) {
+                        //返回的消息队列
                         ProcessQueue processQueue = this.processQueueTable.get(mq);
                         if (processQueue != null) {
                             if (!processQueue.isLocked()) {
                                 log.info("the message queue locked OK, Group: {} {}", this.consumerGroup, mq);
                             }
-
+                            //设置为锁定标志
                             processQueue.setLocked(true);
+                            //设置最后锁定时间
                             processQueue.setLastLockTimestamp(System.currentTimeMillis());
                         }
                     }
                     for (MessageQueue mq : mqs) {
                         if (!lockOKMQSet.contains(mq)) {
+                            //将不包含在内的,设置为false
                             ProcessQueue processQueue = this.processQueueTable.get(mq);
                             if (processQueue != null) {
                                 processQueue.setLocked(false);
