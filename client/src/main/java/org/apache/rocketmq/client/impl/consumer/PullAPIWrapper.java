@@ -234,10 +234,11 @@ public class PullAPIWrapper {
     }
 
     public long recalculatePullFromWhichNode(final MessageQueue mq) {
+        //默认返回主节点
         if (this.isConnectBrokerByUser()) {
             return this.defaultBrokerId;
         }
-
+        //从此缓存表获取
         AtomicLong suggest = this.pullFromWhichNodeTable.get(mq);
         if (suggest != null) {
             return suggest.get();

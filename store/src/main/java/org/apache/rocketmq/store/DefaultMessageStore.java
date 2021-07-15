@@ -701,10 +701,13 @@ public class DefaultMessageStore implements MessageStore {
                         }
 
                         nextBeginOffset = offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE);
-
+                        //normal流程中
+                        //最大偏移量减去此次拉取的最大偏移量
                         long diff = maxOffsetPy - maxPhyOffsetPulling;
+                        //获取本机最大内存乘以能使用的最大比例,从而获取到一个可以使用内存总量
                         long memory = (long) (StoreUtil.TOTAL_PHYSICAL_MEMORY_SIZE
                             * (this.messageStoreConfig.getAccessMessageInMemoryMaxRatio() / 100.0));
+                        //看是不是接下来需要拉取的消息超过了常驻消息
                         getResult.setSuggestPullingFromSlave(diff > memory);
                     } finally {
 

@@ -1053,6 +1053,7 @@ public class MQClientInstance {
         HashMap<Long/* brokerId */, String/* address */> map = this.brokerAddrTable.get(brokerName);
         //根据节点民称获取到所有的节点Id
         if (map != null && !map.isEmpty()) {
+            //尝试获取到Id对应的Addr
             brokerAddr = map.get(brokerId);
             slave = brokerId != MixAll.MASTER_ID;
             found = brokerAddr != null;
@@ -1064,6 +1065,7 @@ public class MQClientInstance {
             }
 
             if (!found && !onlyThisBroker) {
+                //获取下一个brokerName中的addr
                 Entry<Long, String> entry = map.entrySet().iterator().next();
                 brokerAddr = entry.getValue();
                 slave = entry.getKey() != MixAll.MASTER_ID;
